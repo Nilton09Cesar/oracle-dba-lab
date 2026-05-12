@@ -1,0 +1,155 @@
+
+#!/usr/local/bin/python3.9
+import subprocess
+import logging
+import os
+import sys
+import shutil
+from datetime import datetime
+
+try:
+    import oracledb
+except ImportError:
+    print("ERRO: oracledb nao encontrado.")
+    print("Execute: python3.9 -m pip install oracledb")
+    sys.exit(1)
+
+ORACLE_HOME        = "/u01/app/oracle/product/19.0.0/dbhome_1"
+ORACLE_SID         = "orcl"
+BACKUP_DIR         = "/opt/oracle/scripts/backup"
+LOG_DIR            = "/opt/oracle/scripts/backup/logs"
+ESPACO_MINIMO_GB   = 50
+FRA_USO_MAXIMO_PCT = 85
+BACKUP_TAG         = "BKP_" + datetime.now().strftime("%Y%m%d_%H%M%S")
+
+os.makedirs(LOG_DIR, exist_ok=True)
+
+log_file = os.path.join(LOG_DIR, "backup_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".log")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+RMAN_SCRIPT = """
+run {
+    allocate channel ch1 device type disk;
+    allocate channel ch2 device type disk;
+    backup incremental level 0
+        tag '""" + BACKUP_TAG + """'
+        database
+        plus archivelog
+        delete input;
+    backup current controlfile tag '""" + BACKUP_TAG + """_CTL';
+    backup spfile tag '""" + BACKUP_TAG + """_SPFILE';
+    crosscheck backup;
+    delete noprompt obsolete;
+    release channel ch1;
+    release channel ch2;
+}
+"""
+
+def set_oracle_env():
+    os.environ["ORACLE_HOME"]     = ORACLE_HOME
+    os.environ["ORACLE_SID"]      = ORACLE_SID
+    os.environ["PATH"]            = ORACLE_HOME + "/bin:" + os.environ.get("PATH", "")
+    os.environ["LD_LIBRARY_PATH"] = ORACLE_HOME + "/lib"
+    logger.info("Ambiente Oracle configurado: SID=" + ORACLE_SID)
+
+def validar_espaco_disco():
+    logger.info("Verificando espaco em disco...")
+    total, usado, livre = shutil.disk_usage(BACKUP_DIR)
+    livre_gb = livre  / (1024 ** 3)
+    total_gb = total  / (1024 ** 3)
+    usado_gb = usado  / (1024 ** 3)
+    uso_pct  = (usado / total) * 100
+    logger.info("  Total    : " + str(round(total_gb, 2)) + " GB")
+    logger.info("  Usado    : " + str(round(usado_gb, 2)) + " GB (" + str(round(uso_pct, 1)) + "%)")
+    logger.info("  Livre    : " + str(round(livre_gb, 2)) + " GB")
+    logger.info("  Minimo   : " + str(ESPACO_MINIMO_GB) + " GB")
+    if livre_gb < ESPACO_MINIMO_GB:
+        logger.error("ESPACO INSUFICIENTE! Livre: " + str(round(livre_gb, 2)) + " GB")
+        sys.exit(1)
+    logger.info("OK Espaco em disco suficiente.")
+
+def validar_espaco_fra():
+    logger.info("Verificando FRA...")
+    try:
+        oracledb.init_oracle_client(lib_dir=ORACLE_HOME + "/lib")
+        conn = oracledb.connect(dsn="localhost:1521/" + ORACLE_SID, mode=oracledb.AUTH_MODE_SYSDBA)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT SPACE_LIMIT, SPACE_USED, SPACE_RECLAIMABLE,
+                   ROUND((SPACE_USED / SPACE_LIMIT) * 100, 2)
+            FROM V$RECOVERY_FILE_DEST
+        """)
+        row = cursor.fetchone()
+        if not row:
+            logger.warning("FRA nao configurada. Continuando...")
+            cursor.close()
+            conn.close()
+            return
+        total_gb  = row[0] / (1024 ** 3)
+        usado_gb  = row[1] / (1024 ** 3)
+        recup_gb  = row[2] / (1024 ** 3)
+        uso_pct   = row[3]
+        logger.info("  FRA Total  : " + str(round(total_gb, 2)) + " GB")
+        logger.info("  FRA Usado  : " + str(round(usado_gb, 2)) + " GB (" + str(uso_pct) + "%)")
+        logger.info("  Recuperavel: " + str(round(recup_gb, 2)) + " GB")
+        if uso_pct >= FRA_USO_MAXIMO_PCT:
+            logger.error("FRA ACIMA DO LIMITE! " + str(uso_pct) + "% >= " + str(FRA_USO_MAXIMO_PCT) + "%")
+            cursor.close()
+            conn.close()
+            sys.exit(1)
+        logger.info("OK FRA dentro do limite.")
+        cursor.close()
+        conn.close()
+    except oracledb.DatabaseError as e:
+        logger.error("Erro ao consultar FRA: " + str(e))
+        sys.exit(1)
+
+def executar_backup():
+    set_oracle_env()
+    validar_espaco_disco()
+    validar_espaco_fra()
+    rman_bin = os.path.join(ORACLE_HOME, "bin", "rman")
+    logger.info("=" * 60)
+    logger.info("INICIANDO BACKUP | TAG: " + BACKUP_TAG)
+    logger.info("=" * 60)
+    try:
+        resultado = subprocess.run(
+            [rman_bin, "target", "/"],
+            input=RMAN_SCRIPT,
+            capture_output=True,
+            text=True,
+            timeout=7200
+        )
+        logger.info(resultado.stdout)
+        if resultado.returncode != 0:
+            logger.error("RMAN retornou com ERRO!")
+            logger.error(resultado.stderr)
+            sys.exit(1)
+        if "RMAN-" in resultado.stdout or "ORA-" in resultado.stdout:
+            logger.warning("Possiveis erros na saida do RMAN. Revise o log!")
+        logger.info("=" * 60)
+        logger.info("BACKUP CONCLUIDO COM SUCESSO")
+        logger.info("=" * 60)
+    except subprocess.TimeoutExpired:
+        logger.error("TIMEOUT: backup excedeu 2 horas!")
+        sys.exit(1)
+    except FileNotFoundError:
+        logger.error("RMAN nao encontrado: " + rman_bin)
+        sys.exit(1)
+    except Exception as e:
+        logger.error("Erro inesperado: " + str(e))
+        sys.exit(1)
+
+if __name__ == "__main__":
+    executar_backup()
+EOF
