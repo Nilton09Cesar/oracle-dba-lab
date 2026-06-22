@@ -1,0 +1,67 @@
+-- 2. Criar o PDB (OMF cuida dos datafiles)
+CREATE PLUGGABLE DATABASE PDBTNS 
+ADMIN USER pdb_admin IDENTIFIED BY senha;
+
+-- 3. Abrir e Salvar o estado do PDBTNS
+ALTER PLUGGABLE DATABASE PDBTNS OPEN;
+ALTER PLUGGABLE DATABASE PDBTNS SAVE STATE;
+
+-- 4. Mudar para o contexto do PDB
+ALTER SESSION SET CONTAINER = PDBTNS;
+
+-- 5. Criar usuário e dar grant
+CREATE USER usr_int IDENTIFIED BY senha;
+GRANT CREATE SESSION TO usr_int;
+
+-- 6. Confirmar serviço registrado no listener
+-- (rodar no SO): 
+!lsnrctl status
+
+-- ============================================
+-- CENA 1 — ORA-12154
+-- tnsnames.ora SEM entrada para PDBTNS
+-- ============================================
+sqlplus usr_int/senha@PDBTNS
+
+
+-- ============================================
+-- CENA 2 — ORA-12514
+-- Adicionar entrada no tnsnames.ora, mas fechar o PDB
+-- ============================================
+-- Adicionar no tnsnames.ora:
+
+PDBTNS =
+    (DESCRIPTION =
+     (ADDRESS = (PROTOCOL = TCP)(HOST = dba-ol7)(PORT = 1521))
+     (CONNECT_DATA =
+       (SERVER = DEDICATED)
+       (SERVICE_NAME = PDBTNS)
+     )
+   )
+
+$ lsnrctl stop 
+$ lsnrctl start 
+
+sqlplus / as sysdba
+> alter system register
+
+-- Fechar o PDB (serviço some do listener)
+ALTER SESSION SET CONTAINER = CDB$ROOT;
+ALTER PLUGGABLE DATABASE PDBTNS CLOSE IMMEDIATE;
+
+-- Confirmar que o serviço sumiu:
+lsnrctl status 
+
+-- Tentar conectar:
+sqlplus usr_int/senha@PDBTNS
+-- → ORA-12514: TNS:listener does not currently know of service requested
+
+
+
+-- ============================================
+-- CENA 3 — SUCESSO
+-- Abrir o PDB e conectar normalmente
+-- ============================================
+ALTER PLUGGABLE DATABASE PDBTNS OPEN;
+
+CONN usr_int/senha@PDBTNS
