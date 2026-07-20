@@ -52,18 +52,18 @@ O **rlwrap** é amplamente utilizado por DBAs Oracle no mundo todo com:
 ### 1. Problema Inicial
 O erro clássico que todo DBA Oracle enfrenta ao tentar usar histórico e setas:
 
-```bash
+```
 [oracle@ol8-dba ~]$ rlwrap sqlplus / as sysdba
 -bash: rlwrap: command not found
 ```
 
-![Erro: rlwrap command not found](images/foto1.png)
+![Erro: rlwrap command not found](prints/foto1.png)
 
 ---
 
 ### 2. Habilitando o Repositório EPEL (como root)
 
-```bash
+```
 # Trocar para root
 su -
 
@@ -71,18 +71,18 @@ su -
 dnf install oracle-epel-release-el8 -y
 ```
 
-![Instalando oracle-epel-release-el8](images/foto2.jpg)
+![Instalando oracle-epel-release-el8](prints/foto2.png)
 
-![Transação concluída](images/foto3.jpg)
+![Transação concluída](prints/foto3.png)
 
 > **Nota**: Se o comando `dnf config-manager` não existir:
-> ```bash
+> ```
 > dnf install dnf-plugins-core -y
 > ```
 
 Habilite o repositório (caso ainda não tenha sido habilitado pelo pacote):
 
-```bash
+```
 dnf config-manager --set-enabled ol8_developer_EPEL
 dnf makecache
 ```
@@ -91,26 +91,26 @@ dnf makecache
 
 ### 3. Instalando o rlwrap
 
-```bash
+```
 dnf install rlwrap -y
 ```
 
-![Instalando rlwrap + dependências](images/foto4.jpg)
+![Instalando rlwrap + dependências](prints/foto4.png)
 
 ---
 
 ### 4. Verificação
 
-```bash
+```
 [oracle@ol8-dba ~]$ rlwrap -v
 rlwrap 0.46.2
 ```
 
-![Verificação da versão do rlwrap](images/foto5.png)
+![Verificação da versão do rlwrap](prints/foto5.png)
 
 Confirme os repositórios habilitados:
 
-```bash
+```
 dnf repolist | grep -i epel
 # Esperado: ol8_developer_EPEL
 ```
@@ -121,27 +121,27 @@ dnf repolist | grep -i epel
 
 #### 🔹 SQL*Plus com histórico e setas
 
-```bash
+```
 rlwrap sqlplus / as sysdba
 ```
 
-![sqlplus com rlwrap - Conectado + show pdbs](images/foto6.jpg)
+![sqlplus com rlwrap - Conectado + show pdbs](prints/foto6.png)
 
 #### 🔹 RMAN com rlwrap
 
-```bash
+```
 rlwrap rman target /
 ```
 
-![rman com rlwrap](images/foto7.jpg)
+![rman com rlwrap](prints/foto7.png)
 
 #### 🔹 ASMCMD com rlwrap
 
-```bash
+```
 rlwrap asmcmd
 ```
 
-![asmcmd com rlwrap](images/foto8.png)
+![asmcmd com rlwrap](prints/foto8.png)
 
 ---
 
