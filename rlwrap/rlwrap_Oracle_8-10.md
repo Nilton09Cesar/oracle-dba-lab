@@ -90,7 +90,10 @@ dnf install oracle-epel-release-el8 -y
 ```
 
 ![Instalando oracle-epel-release-el8](prints/foto2.png)
-
+### <span style="color:#e74c3c; font-weight:bold">🔴 3. Final da instalação</span>
+```
+dnf install oracle-epel-release-el8 -y
+```
 ![Transação concluída](prints/foto3.png)
 
 > **Nota**: Se o comando `dnf config-manager` não existir:
