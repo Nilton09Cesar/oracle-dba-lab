@@ -12,15 +12,13 @@ Criar um health check leve e automatizável para monitorar o uso de tablespaces,
 - Alertas automáticos quando uso > 85%
 - Uso de usuário dedicado de monitoramento (melhor prática de segurança)
 
----
 
-## 📁 Estrutura do Projeto
 
 ## 🚀 Como Usar
 
 ### 1. Criar o usuário de monitoramento (no PDB)
 
-
+```
 ALTER SESSION SET CONTAINER=orclpdb;
 
 CREATE USER APP_MONITOR IDENTIFIED BY "sua_senha";
@@ -28,25 +26,33 @@ CREATE USER APP_MONITOR IDENTIFIED BY "sua_senha";
 GRANT CREATE SESSION TO APP_MONITOR;
 
 GRANT CREATE SESSION, SELECT_CATALOG_ROLE TO APP_MONITOR;
+```
+--- 
 
 ### 2. Configurar e executar os scripts
 
 # Criar diretório (se ainda não existir)
+```
 mkdir -p /monitor_tbs/scripts
 
 chown -R oracle:oinstall /monitor_tbs/scripts
 
 chmod -R 775 /monitor_tbs/scripts
+```
+---
 
 # Executar os scripts
-
+```
 $ cd /monitor_tbs/scripts/
 
 $ vim test_connection.py
 
 $ python3.9 scripts/test_connection.py
+```
+
 
 ### Testando Conexão 
+```
 
 $ python3.9 /monitor_tbs/scripts/test_connection.py
 
@@ -55,11 +61,15 @@ $ cd /monitor_tbs/scripts/
 $ vim check_tablespace.py
 
 $ python3.9 scripts/check_tablespace.py
+```
+---
 
 ### Executar
-
+```
 $ python3.9 /monitor_tbs/scripts/check_tablespace.py
 
+```
+----
 
 # 🔧 Melhorias Futuras (Roadmap)
 
@@ -73,6 +83,7 @@ $ python3.9 /monitor_tbs/scripts/check_tablespace.py
 
 #### Integração com Prometheus + Grafana
 
+----
 
 # 🛠️ Tecnologias Utilizadas
 
@@ -86,6 +97,7 @@ $ python3.9 /monitor_tbs/scripts/check_tablespace.py
 
 ### Shell Scripting
 
+---
 
 # 👨‍💻 Sobre o Autor
 ## Nilton Cesar
@@ -95,7 +107,7 @@ $ python3.9 /monitor_tbs/scripts/check_tablespace.py
 ### Monitoramento e performance
 ## Boas práticas de administração Oracle
 
-## Procurando vaga: Oracle DBA Junior ou Pleno
+
 
 
 
