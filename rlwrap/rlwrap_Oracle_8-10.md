@@ -10,6 +10,24 @@
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
 ---
+## 📁 Estrutura do Projeto
+
+```
+rlwrap/
+├── rlwrap_Oracle_8-10.md     # Anotações originais
+├── prints/
+│   ├── foto1.png             # Erro inicial
+│   ├── foto2.jpg             # Início da instalação EPEL
+│   ├── foto3.jpg             # EPEL instalado com sucesso
+│   ├── foto4.jpg             # Instalação do rlwrap
+│   ├── foto5.png             # Verificação da versão
+│   ├── foto6.jpg             # Evidência sqlplus
+│   ├── foto7.jpg             # Evidência rman
+│   └── foto8.png             # Evidência asmcmd
+└── install-rlwrap.sh         # Script pronto para uso
+```
+
+---
 
 ## 📋 Visão Geral
 
