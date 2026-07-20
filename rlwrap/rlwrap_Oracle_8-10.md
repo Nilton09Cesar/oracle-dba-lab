@@ -225,41 +225,10 @@ asmcmd
 
 ---
 
-## 🛠️ Solução de Problemas
-
-| Problema                              | Solução                                         |
-|---------------------------------------|-------------------------------------------------|
-| `dnf config-manager: command not found` | `dnf install dnf-plugins-core -y`              |
-| Repositório não encontrado            | `dnf repolist` → confirme `ol8_developer_EPEL` |
-| Permissão negada                      | Execute os passos de instalação como `root`    |
-| Ainda aparece "command not found"     | `hash -r` ou abra um novo terminal             |
-
----
-
-## 📁 Estrutura do Projeto
-
-```
-oracle-rlwrap-portfolio/
-├── README.md                 # Este arquivo
-├── RLWRAP.sql                # Anotações originais
-├── images/
-│   ├── foto1.png             # Erro inicial
-│   ├── foto2.jpg             # Início da instalação EPEL
-│   ├── foto3.jpg             # EPEL instalado com sucesso
-│   ├── foto4.jpg             # Instalação do rlwrap
-│   ├── foto5.png             # Verificação da versão
-│   ├── foto6.jpg             # Evidência sqlplus
-│   ├── foto7.jpg             # Evidência rman
-│   └── foto8.png             # Evidência asmcmd
-└── install-rlwrap.sh         # Script pronto para uso
-```
-
----
-
 ## ✍️ Autor
 
 **Portfólio DBA Oracle**  
-Especializado em administração de Oracle Database 19c / 21c / 23ai em ambientes Oracle Linux.
+Especializado em administração de Oracle Database em ambientes Oracle Linux.
 
 ---
 
